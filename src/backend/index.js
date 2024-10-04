@@ -13,6 +13,8 @@ app.use(express.static('/home/node/app/static/'));
 
 //=======[ Main module code ]==================================================
 
+// Trae datos de un device en particular desde la base de datos
+//-------------------------------------------------------------
 app.get('/device/:id',function(req,res){
     utils.query("SELECT id,description FROM Devices where id="+req.params.id,(error,respuesta,fields)=>{
         if(error){
@@ -30,8 +32,9 @@ app.get('/usuario',function(req,res){
 });
 //Insert
 app.post('/usuario',function(req,res){
-    console.log(req.body.id);
-    if(req.body.id!=undefined && req.body.name!=undefined){
+    console.log(req.body);
+    //if(req.body.id!=undefined && req.body.name!=undefined){
+    if(req.body.name!=undefined){
         //inset en la tabla
         res.send();
     }else{
@@ -56,6 +59,23 @@ app.post('/device/',function(req,res){
 })
 
 
+// Actualizo el device si me vino un pedido de edición
+//----------------------------------------------------
+app.post('/updateDevice', (req, res) => {
+    let updatedDevice = req.body;
+    // Actualizar el dispositivo en la base de datos
+    utils.query("UPDATE Devices SET name="+req.body.name +", description="+req.body.description+", type="+req.body.type+"where id="+req.body.id,
+        (err,resp,meta)=>{
+            if(err){
+                console.log(err.sqlMessage)
+                res.status(409).send(err.sqlMessage);
+            }else{
+                res.send("ok "+resp);
+            }
+    })
+    console.log("Dispositivo actualizado:", updatedDevice);
+    res.json(updatedDevice); // Devolver el dispositivo actualizado
+});
 
 app.get('/devices/', function(req, res, next) {
     
