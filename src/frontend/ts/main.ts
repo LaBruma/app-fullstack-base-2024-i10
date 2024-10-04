@@ -59,7 +59,6 @@ class Main implements EventListenerObject {
             let json = { id: 2, name: 'mramos' };
             xmlHttp.send(JSON.stringify(json));
 
-
         } else {
             let input = <HTMLInputElement>object.target;
             alert(idDelElemento.substring(3) + ' - ' + input.checked);
@@ -87,7 +86,7 @@ class Main implements EventListenerObject {
             if (xmlHttp.readyState == 4) {
                 // Si me llegó un codigo OK del server
                 if (xmlHttp.status == 200) {
-                    //
+                    // Recupero el elemento lista del HTML (donde voy a poner el texto plano que voy a generar)
                     let ul = this.recuperarElemento("list")
                     // Defino la variable para generar el texto plano que ejecutará el HTML
                     let listaDevices: string = '';
@@ -120,11 +119,15 @@ class Main implements EventListenerObject {
                       </li>`
                      
                     }
+                    // Paso el texto plano generado al HTML para que se muestre
                     ul.innerHTML = listaDevices;
-                
+                    
+                    // Recupero los id de los elementos generados para asociar eventos
                     for (let item of lista) {
+                        // Recupero referencias a checkbox
                         let cb = this.recuperarElemento("cb_" + item.id);
                         cb.addEventListener("click", this);
+                        // Recupero referencia a botón de edición
                         let edt = this.recuperarElemento("edt_" + item.id);
                         edt.addEventListener("click", (event) => this.editarDispositivo(item));
                     }
@@ -143,6 +146,8 @@ class Main implements EventListenerObject {
     }
 
     private editarDispositivo(item) {
+
+        // Configuración de la ventana emergente (HTML)
         let modalContent = `
         <div id="editModal" class="modal">
           <div class="modal-content">
@@ -166,10 +171,10 @@ class Main implements EventListenerObject {
         let modal = document.getElementById("editModal");
         modal.style.display = "block";
 
-        // Añadir eventos para guardar o cancelar
+        // Añadir eventos para guardar...
         let saveBtn = document.getElementById("save_" + item.id);
         saveBtn.addEventListener("click", () => this.guardarCambios(item));
-
+        //... o cancelar
         let cancelBtn = document.getElementById("cancel");
         cancelBtn.addEventListener("click", () => {
             modal.remove();
@@ -178,38 +183,49 @@ class Main implements EventListenerObject {
 
     private guardarCambios(item) {
 
-        let newName = this.recuperarElemento("editName");
-        let newDescription = this.recuperarElemento("editDescription");
-        let newType = this.recuperarElemento("editType");
-
-        let updatedDevice = {
-            id: item.id,
-            name: newName,
-            description: newDescription,
-            type: newType
-        };
-
         // Enviar los cambios al backend
         let xmlHttpPost = new XMLHttpRequest();
+        
+        let newName = this.recuperarElemento("editName").value;
+        let newDescription = this.recuperarElemento("editDescription").value;
+        let newType = this.recuperarElemento("editType").value;
+
+        let updatedDevice = {id: item.id,
+            name: newName,
+            description: newDescription,
+            type: newType}
+
         xmlHttpPost.onreadystatechange = () => {
-            if (xmlHttpPost.readyState === 4 && xmlHttpPost.status === 200) {
-                let json = JSON.parse(xmlHttpPost.responseText);
-                alert('Dispositivo actualizado: ' + json.name);
-                location.reload(); // Recargar la página para reflejar los cambios
+        
+            if (xmlHttpPost.readyState === 4) {
+                // Si me llegó un codigo OK del server
+                if (xmlHttpPost.status === 200) {                
+                    // Si no hubo error muestro un alert indicando el dispositivo que se modificó
+                    let json = JSON.parse(xmlHttpPost.responseText);
+                    alert('Dispositivo actualizado: ' + json.name);
+                } else {
+                    // Si hay error muestro un alert informándolo
+                    alert("ERROR en la consulta");
+                }
             }
-        };
+        }
+        // Hago el POST llamando a updateDevice con los datos levantados del DOC
+        //----------------------------------------------------------------------
         xmlHttpPost.open("POST", "http://localhost:8000/updateDevice", true);
         xmlHttpPost.setRequestHeader("Content-Type", "application/json");
         xmlHttpPost.send(JSON.stringify(updatedDevice));
 
         // Cerrar la ventana emergente
         document.getElementById("editModal").remove();
+        // Recargo la página para que tome efecto el cambio
+        location.reload();
     }
 
     private recuperarElemento(id: string):HTMLInputElement {
         return <HTMLInputElement>document.getElementById(id);
     }
 }
+
 window.addEventListener('load', () => {
     
     let main: Main = new Main();

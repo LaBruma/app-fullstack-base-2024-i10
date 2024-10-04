@@ -44,6 +44,9 @@ app.post('/usuario',function(req,res){
     
 });
 
+
+// Cambio de estado del device
+//----------------------------
 app.post('/device/',function(req,res){
     
     utils.query("update Devices set state="+req.body.status +" where id="+req.body.id,
@@ -52,31 +55,33 @@ app.post('/device/',function(req,res){
                 console.log(err.sqlMessage)
                 res.status(409).send(err.sqlMessage);
             }else{
-                res.send("ok "+resp);
+                res.status(200).send("ok "+resp);
             }
     })
     
 })
 
 
-// Actualizo el device si me vino un pedido de edición
-//----------------------------------------------------
+// Función que actualiza el device si vino un pedido por POST
+//-----------------------------------------------------------
 app.post('/updateDevice', (req, res) => {
-    let updatedDevice = req.body.name;
-    // Actualizar el dispositivo en la base de datos
-    utils.query("UPDATE Devices SET name="+req.body.name +", description="+req.body.description+", type="+req.body.type+"where id="+req.body.id,
+    // Actualizar los datos del dispositivo en la base de datos
+    utils.query("UPDATE Devices SET name= '"+req.body.name +"', description= '"+req.body.description+"', type="+req.body.type+" where id="+req.body.id,
         (err,db_resp,meta)=>{
             if(err){
+                // Si hay error lo muestro en consola y lo devuelvo como respuesta del POST
                 console.log(err.sqlMessage)
                 res.status(409).send(err.sqlMessage);
             }else{
-                res.send("ok "+db_resp);
+                // Si no hay error devuelvo el nombre del dispositivo actualizado
+                let respuesta = {name:req.body.name}
+                res.status(200).send(JSON.stringify(respuesta));
             }
     })
-    console.log("Dispositivo actualizado:", updatedDevice);
-    res.json(updatedDevice); // Devolver el dispositivo actualizado
 });
 
+// Pedido de información de los dispositivos a la base de datos
+//-------------------------------------------------------------
 app.get('/devices/', function(req, res, next) {
     utils.query("SELECT * FROM Devices",(error,db_resp,fields)=>{
         //console.log(db_resp);
@@ -87,32 +92,9 @@ app.get('/devices/', function(req, res, next) {
         }
         
     })
-
-/*   devices = [
-        { 
-            'id': 1, 
-            'name': 'Lampara 1', 
-            'description': 'Luz living', 
-            'state': 0, 
-            'type': 1, 
-        },
-        { 
-            'id': 2, 
-            'name': 'Ventilador 1', 
-            'description': 'Ventilador Habitacion', 
-            'state': 1, 
-            'type': 2, 
-        }, { 
-            'id': 3, 
-            'name': 'Luz Cocina 1', 
-            'description': 'Cocina', 
-            'state': 1, 
-            'type': 2, 
-        },
-    ]
-    res.send(JSON.stringify(devices)).status(200); */
 });
 
+//-------------------------------------------------------------
 app.listen(PORT, function(req, res) {
     console.log("NodeJS API running correctly");
 });
