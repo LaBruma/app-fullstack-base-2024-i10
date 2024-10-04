@@ -5,14 +5,16 @@ class Main implements EventListenerObject {
     constructor() {
         this.users.push(new Usuario('mramos', '123132'));
         
-        let btn = this.recuperarElemento("btn");
-        btn.addEventListener('click', this);
+        //let btn = this.recuperarElemento("btn");
+        //btn.addEventListener('click', this);
         let btnBuscar = this.recuperarElemento("btnBuscar");
         btnBuscar.addEventListener('click', this);
         let btnLogin = this.recuperarElemento("btnLogin");
         btnLogin.addEventListener('click', this);
-        let btnPost = this.recuperarElemento("btnPost");
-        btnPost.addEventListener('click', this);
+        //let btnPost = this.recuperarElemento("btnPost");
+        //btnPost.addEventListener('click', this);
+
+        this.buscarDevices();
     }
     handleEvent(object: Event): void {
         let idDelElemento = (<HTMLElement>object.target).id;
@@ -101,6 +103,7 @@ class Main implements EventListenerObject {
                         <p>${item.description} 
                         </p>
                         <button id="edt_${item.id}" class="edit-button">Editar</button>
+                        <button id="del_${item.id}" class="edit-button">Eliminar</button>
                         <a href="#!" class="secondary-content">
                           <div class="switch">
                               <label>
@@ -127,9 +130,12 @@ class Main implements EventListenerObject {
                         // Recupero referencias a checkbox
                         let cb = this.recuperarElemento("cb_" + item.id);
                         cb.addEventListener("click", this);
-                        // Recupero referencia a botón de edición
+                        // Recupero referencia a botones de edición
                         let edt = this.recuperarElemento("edt_" + item.id);
                         edt.addEventListener("click", (event) => this.editarDispositivo(item));
+                        // Recupero referencia a botones de eliminación
+                        let del = this.recuperarElemento("del_" + item.id);
+                        del.addEventListener("click", (event) => this.quitarDispositivo(item));
                     }
                 } else {
                     alert("ERROR en la consulta");
@@ -219,6 +225,11 @@ class Main implements EventListenerObject {
         document.getElementById("editModal").remove();
         // Recargo la página para que tome efecto el cambio
         location.reload();
+    }
+
+
+    private quitarDispositivo(item) {
+
     }
 
     private recuperarElemento(id: string):HTMLInputElement {
