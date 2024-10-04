@@ -62,15 +62,15 @@ app.post('/device/',function(req,res){
 // Actualizo el device si me vino un pedido de edición
 //----------------------------------------------------
 app.post('/updateDevice', (req, res) => {
-    let updatedDevice = req.body;
+    let updatedDevice = req.body.name;
     // Actualizar el dispositivo en la base de datos
     utils.query("UPDATE Devices SET name="+req.body.name +", description="+req.body.description+", type="+req.body.type+"where id="+req.body.id,
-        (err,resp,meta)=>{
+        (err,db_resp,meta)=>{
             if(err){
                 console.log(err.sqlMessage)
                 res.status(409).send(err.sqlMessage);
             }else{
-                res.send("ok "+resp);
+                res.send("ok "+db_resp);
             }
     })
     console.log("Dispositivo actualizado:", updatedDevice);
@@ -78,8 +78,17 @@ app.post('/updateDevice', (req, res) => {
 });
 
 app.get('/devices/', function(req, res, next) {
-    
-    devices = [
+    utils.query("SELECT * FROM Devices",(error,db_resp,fields)=>{
+        //console.log(db_resp);
+        if(error){
+            res.status(409).send(error.sqlMessage);    
+        }else{
+            res.status(200).send(JSON.stringify(db_resp));
+        }
+        
+    })
+
+/*   devices = [
         { 
             'id': 1, 
             'name': 'Lampara 1', 
@@ -101,7 +110,7 @@ app.get('/devices/', function(req, res, next) {
             'type': 2, 
         },
     ]
-    res.send(JSON.stringify(devices)).status(200);
+    res.send(JSON.stringify(devices)).status(200); */
 });
 
 app.listen(PORT, function(req, res) {
