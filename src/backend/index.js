@@ -80,6 +80,28 @@ app.post('/updateDevice', (req, res) => {
     })
 });
 
+// Función que actualiza el device si vino un pedido por POST
+//-----------------------------------------------------------
+app.post('/addDevice', (req, res) => {
+    // Agregar el dispositivo en la base de datos
+    // NOTA: el campo "id" está definido como autoincrement en smart_home.sql, por eso no lo indico
+    let querystr = "INSERT INTO Devices (name, description, state, type) VALUES ('"+req.body.name +"', '"+req.body.description+"', '"+req.body.state+"', '"+req.body.type+"')"
+    console.log(querystr);
+    utils.query(querystr,
+        (err,db_resp,meta)=>{
+            if(err){
+                // Si hay error lo muestro en consola y lo devuelvo como respuesta del POST
+                console.log(err.sqlMessage)
+                res.status(409).send(err.sqlMessage);
+            }else{
+                // Si no hay error devuelvo el nombre del dispositivo actualizado
+                let respuesta = {name:req.body.name}
+                res.status(200).send(JSON.stringify(respuesta));
+            }
+    })
+});
+
+
 // Pedido de información de los dispositivos a la base de datos
 //-------------------------------------------------------------
 app.get('/devices/', function(req, res, next) {

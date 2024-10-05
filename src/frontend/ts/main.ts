@@ -5,15 +5,13 @@ class Main implements EventListenerObject {
     constructor() {
         this.users.push(new Usuario('mramos', '123132'));
         
-        //let btn = this.recuperarElemento("btn");
-        //btn.addEventListener('click', this);
-        let btnBuscar = this.recuperarElemento("btnBuscar");
-        btnBuscar.addEventListener('click', this);
+        let btnAgregar = this.recuperarElemento("btnAgregar");
+        btnAgregar.addEventListener('click', this);
         let btnLogin = this.recuperarElemento("btnLogin");
         btnLogin.addEventListener('click', this);
-        //let btnPost = this.recuperarElemento("btnPost");
-        //btnPost.addEventListener('click', this);
 
+        // Corro la búsqueda de devices con el constructor
+        // (No tengo un botón para buscarlos)
         this.buscarDevices();
     }
     handleEvent(object: Event): void {
@@ -61,9 +59,13 @@ class Main implements EventListenerObject {
             let json = { id: 2, name: 'mramos' };
             xmlHttp.send(JSON.stringify(json));
 
+        } else if (idDelElemento == 'btnAgregar') {
+
+            this.agregarDispositivo();
+
         } else {
             let input = <HTMLInputElement>object.target;
-            alert(idDelElemento.substring(3) + ' - ' + input.checked);
+            // alert(idDelElemento.substring(3) + ' - ' + input.checked);
             let prenderJson = { id: input.getAttribute("idBd"), status: input.checked }
             let xmlHttpPost = new XMLHttpRequest();
             
@@ -148,14 +150,18 @@ class Main implements EventListenerObject {
 
         xmlHttp.send();
 
-        
     }
 
     private editarDispositivo(item) {
 
-        // Configuración de la ventana emergente (HTML)
+        // Permite modificar nombre y descripción del dispositivo
+        // (no tipo ni estado, el estado se puede cambiar desde el panel principal
+        // y para el cambiar el tipo se debería crear un dispositivo nuevo)
+        //-----------------------------------------------------------------
+
+        // Configuración del modal (HTML)
         let modalContent = `
-        <div id="editModal" class="modal">
+        <div id="editModal" class="modal" style="width: 600px;">
           <div class="modal-content">
             <h4>Editar Dispositivo</h4>
             <label for="editType">Tipo:</label>
@@ -172,14 +178,14 @@ class Main implements EventListenerObject {
         </div>
         `;
 
-        // Mostrar ventana emergente
+        // Mostrar modal emergente
         document.body.insertAdjacentHTML('beforeend', modalContent);
         let modal = document.getElementById("editModal");
         modal.style.display = "block";
 
         // Añadir eventos para guardar...
         let saveBtn = document.getElementById("save_" + item.id);
-        saveBtn.addEventListener("click", () => this.guardarCambios(item));
+        saveBtn.addEventListener("click", () => this.actualizarDispositivo(item));
         //... o cancelar
         let cancelBtn = document.getElementById("cancel");
         cancelBtn.addEventListener("click", () => {
@@ -187,7 +193,10 @@ class Main implements EventListenerObject {
         });
     }
 
-    private guardarCambios(item) {
+    private actualizarDispositivo(item) {
+
+        // Realiza el POST upara actualizar el dispositivo una vez editados sus parámetros
+        //--------------------------------------------------------------------------------
 
         // Enviar los cambios al backend
         let xmlHttpPost = new XMLHttpRequest();
@@ -197,9 +206,9 @@ class Main implements EventListenerObject {
         let newType = this.recuperarElemento("editType").value;
 
         let updatedDevice = {id: item.id,
-            name: newName,
-            description: newDescription,
-            type: newType}
+                            name: newName,
+                            description: newDescription,
+                            type: newType}
 
         xmlHttpPost.onreadystatechange = () => {
         
@@ -227,6 +236,156 @@ class Main implements EventListenerObject {
         location.reload();
     }
 
+    private agregarDispositivo() {
+
+        // Arma el modal para cargar los parámetros de un nuevo dispositivo a agregar
+        //---------------------------------------------------------------------------
+
+        // Configuración de la ventana emergente (HTML)
+        let modalContent = `
+        <div id="editModal" class="modal" style="width: 600px;">
+          <div class="modal-content">
+            <h4>Agregar Dispositivo</h4>
+            <!-- Menú desplegable para el tipo de dispositivo -->
+            <label for="editType">Tipo:</label>
+            <input list="DeviceType" id="editTypeInput" name="DeviceList">
+            <datalist id="DeviceType">
+                <option value="Luz">
+                <option value="Ventilador">
+                <option value="Aire acondicionado">
+                <option value="Televisor">
+                <option value="Ventana">
+                <option value="Equipo de música">
+            </datalist>
+            <label for="editName">Nombre:</label>
+            <input type="text" id="editName" value= "Nombre">
+            <label for="editDescription">Descripción:</label>
+            <input type="text" id="editDescription" value= "Descripción">
+          </div>
+          <div class="modal-footer">
+            <button id="save" class="save-button">Guardar</button>
+            <button id="cancel" class="cancel-button">Cancelar</button>
+          </div>
+        </div>
+        `;
+
+        // Mostrar ventana emergente
+        document.body.insertAdjacentHTML('beforeend', modalContent);
+        let modal = document.getElementById("editModal");
+        modal.style.display = "block";
+
+        // Añadir eventos para guardar...
+        let saveBtn = document.getElementById("save");
+        saveBtn.addEventListener("click", () => this.cargarDispositivo());
+        //... o cancelar
+        let cancelBtn = document.getElementById("cancel");
+        cancelBtn.addEventListener("click", () => {
+            modal.remove();
+        });
+    }
+
+    private cargarDispositivo() {
+
+        // Realiza el POST upara agregar el dispositivo una vez editados sus parámetros
+        //-----------------------------------------------------------------------------
+
+        // Enviar los cambios al backend
+        let xmlHttpPost = new XMLHttpRequest();
+        
+        let newName = this.recuperarElemento("editName").value;
+        let newDescription = this.recuperarElemento("editDescription").value;
+        //let newType: string = "0"
+
+         // Mapeo de opciones a códigos numéricos
+         const deviceTypeMapping = {
+            "Luz": 0,
+            "Ventilador": 1,
+            "Aire acondicionado": 2,
+            "Televisor": 3,
+            "Ventana": 4,
+            "Equipo de música": 5
+        };
+
+        let selectedType = this.recuperarElemento("editTypeInput").value;
+            
+        // Obtener el código numérico correspondiente a la opción seleccionada
+        let newType = deviceTypeMapping[selectedType];
+
+        if (newType !== undefined) {
+
+            /*switch(selectedCode) { 
+                case "Luz": { 
+                //statements;
+                newType = "0";
+                break; 
+                } 
+                case "Aire acondicionado": { 
+                    //statements;
+                    newType = "1";
+                    break; 
+                }
+                case "Televisor": { 
+                    //statements;
+                    newType = "2";
+                    break; 
+                }
+                case "Ventana": { 
+                    //statements;
+                    newType = "3";
+                    break; 
+                }
+                case "Equipo de música": { 
+                    //statements;
+                    newType = "4";
+                    break; 
+                }
+                default: { 
+                //statements; 
+                alert("Tipo de dispositivo no reconocido")
+                break; 
+                } 
+            } */
+
+            // Por defecto cuando creo dispositivos los inicializo con estado 0
+            // Lo dejo del lado usuario por si esta característica se deja
+            // elegir en el futuro
+            //-----------------------------------------------------------------
+            let updatedDevice = {name: newName,
+                                description: newDescription,
+                                type: newType,
+                                state: 0}
+
+            xmlHttpPost.onreadystatechange = () => {
+
+                if (xmlHttpPost.readyState === 4) {
+                    // Si me llegó un codigo OK del server
+                    if (xmlHttpPost.status === 200) {                
+                        // Si no hubo error muestro un alert indicando el dispositivo que se modificó
+                        let json = JSON.parse(xmlHttpPost.responseText);
+                        alert('Dispositivo creado: ' + json.name);
+                    } else {
+                        // Si hay error muestro un alert informándolo
+                        alert("ERROR en la consulta");
+                    }
+                }
+            }
+            // Hago el POST llamando a updateDevice con los datos levantados del DOC
+            //----------------------------------------------------------------------
+            xmlHttpPost.open("POST", "http://localhost:8000/addDevice", true);
+            xmlHttpPost.setRequestHeader("Content-Type", "application/json");
+            xmlHttpPost.send(JSON.stringify(updatedDevice));
+
+        } else {
+
+            alert("Tipo de dispositivo no reconocido");
+
+        }
+
+        // Cerrar la ventana emergente
+        document.getElementById("editModal").remove();
+        // Recargo la página para que tome efecto el cambio
+        location.reload();
+    }
 
     private quitarDispositivo(item) {
 
