@@ -86,7 +86,6 @@ app.post('/addDevice', (req, res) => {
     // Agregar el dispositivo en la base de datos
     // NOTA: el campo "id" está definido como autoincrement en smart_home.sql, por eso no lo indico
     let querystr = "INSERT INTO Devices (name, description, state, type) VALUES ('"+req.body.name +"', '"+req.body.description+"', '"+req.body.state+"', '"+req.body.type+"')"
-    console.log(querystr);
     utils.query(querystr,
         (err,db_resp,meta)=>{
             if(err){
@@ -96,6 +95,25 @@ app.post('/addDevice', (req, res) => {
             }else{
                 // Si no hay error devuelvo el nombre del dispositivo actualizado
                 let respuesta = {name:req.body.name}
+                res.status(200).send(JSON.stringify(respuesta));
+            }
+    })
+});
+
+// Función que elimina un device de la base de datos
+//--------------------------------------------------
+app.post('/deleteDevice', (req, res) => {
+    // Agregar el dispositivo de la base de datos
+    let querystr = "DELETE FROM Devices WHERE Devices.id ="+req.body.id;
+    let respuesta = {name:req.body.name}
+    utils.query(querystr,
+        (err,db_resp,meta)=>{
+            if(err){
+                // Si hay error lo muestro en consola y lo devuelvo como respuesta del POST
+                console.log(err.sqlMessage)
+                res.status(409).send(err.sqlMessage);
+            }else{
+                // Si no hay error devuelvo el nombre del dispositivo actualizado
                 res.status(200).send(JSON.stringify(respuesta));
             }
     })

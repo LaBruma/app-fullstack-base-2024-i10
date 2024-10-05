@@ -389,6 +389,33 @@ class Main implements EventListenerObject {
 
     private quitarDispositivo(item) {
 
+        let xmlHttpPost = new XMLHttpRequest();
+
+        xmlHttpPost.onreadystatechange = () => {
+        
+            if (xmlHttpPost.readyState === 4) {
+                // Si me llegó un codigo OK del server
+                if (xmlHttpPost.status === 200) {                
+                    // Si no hubo error muestro un alert indicando el dispositivo que se modificó
+                    let json = JSON.parse(xmlHttpPost.responseText);
+                    alert('Dispositivo eliminado: ' + json.name);
+                } else {
+                    // Si hay error muestro un alert informándolo
+                    alert("ERROR en la consulta");
+                }
+            }
+        }
+        // Hago el POST llamando a updateDevice con los datos levantados del DOC
+        //----------------------------------------------------------------------
+        xmlHttpPost.open("POST", "http://localhost:8000/deleteDevice", true);
+        xmlHttpPost.setRequestHeader("Content-Type", "application/json");
+
+        let byeDevice = {id: item.id, name: item.name}
+        xmlHttpPost.send(JSON.stringify(byeDevice));
+
+        // Recargo la página para que tome efecto el cambio
+        location.reload();
+
     }
 
     private recuperarElemento(id: string):HTMLInputElement {
