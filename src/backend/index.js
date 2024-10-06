@@ -13,10 +13,14 @@ app.use(express.static('/home/node/app/static/'));
 
 //=======[ Main module code ]==================================================
 
-// Trae datos de un device en particular desde la base de datos
-//-------------------------------------------------------------
+
+//=============================================================================
+// Función que trae datos de un dispositivo en particular
+// NOTA: Dejo esta función porque podría ser útil aunque no se invoque
+//       directamente desde la aplicación.
+//=============================================================================
 app.get('/device/:id',function(req,res){
-    utils.query("SELECT id,description FROM Devices where id="+req.params.id,(error,respuesta,fields)=>{
+    utils.query("SELECT * FROM Devices where id="+req.params.id,(error,respuesta,fields)=>{
         if(error){
             res.status(409).send(error.sqlMessage);    
         }else{
@@ -26,10 +30,30 @@ app.get('/device/:id',function(req,res){
     })
     
 })
+
+//=============================================================================
+// Función que trae datos de todos los dispositivos de la base de datos
+// NOTA: Dejo esta función porque podría ser útil aunque no se invoque
+//       directamente desde la aplicación.
+//=============================================================================
+app.get('/devices/', function(req, res, next) {
+    utils.query("SELECT * FROM Devices",(error,db_resp,fields)=>{
+        //console.log(db_resp);
+        if(error){
+            res.status(409).send(error.sqlMessage);    
+        }else{
+            res.status(200).send(JSON.stringify(db_resp));
+        }
+        
+    })
+});
+
+/*
 app.get('/usuario',function(req,res){
 
     res.send("[{id:1,name:'mramos'},{id:2,name:'fperez'}]")
 });
+
 //Insert
 app.post('/usuario',function(req,res){
     console.log(req.body);
@@ -42,12 +66,12 @@ app.post('/usuario',function(req,res){
         res.status(400).send(JSON.stringify(mensaje));
     }
     
-});
+});*/
 
-
-// Cambio de estado del device
-//----------------------------
-app.post('/device/',function(req,res){
+//=============================================================================
+// Función que cambia el estado del dispositivo frente a una petición
+//=============================================================================
+app.post('/stateDevice/',function(req,res){
     
     utils.query("update Devices set state="+req.body.status +" where id="+req.body.id,
         (err,resp,meta)=>{
@@ -61,9 +85,9 @@ app.post('/device/',function(req,res){
     
 })
 
-
-// Función que actualiza el device si vino un pedido por POST
-//-----------------------------------------------------------
+//=============================================================================
+// Función que actualiza parámetros del dispositivo (nombre/descripción/tipo)
+//=============================================================================
 app.post('/updateDevice', (req, res) => {
     // Actualizar los datos del dispositivo en la base de datos
     utils.query("UPDATE Devices SET name= '"+req.body.name +"', description= '"+req.body.description+"', type="+req.body.type+" where id="+req.body.id,
@@ -80,8 +104,9 @@ app.post('/updateDevice', (req, res) => {
     })
 });
 
-// Función que actualiza el device si vino un pedido por POST
-//-----------------------------------------------------------
+//=============================================================================
+// Función que agrega un nuevo dispositivo si vino un pedido por POST
+//=============================================================================
 app.post('/addDevice', (req, res) => {
     // Agregar el dispositivo en la base de datos
     // NOTA: el campo "id" está definido como autoincrement en smart_home.sql, por eso no lo indico
@@ -100,8 +125,9 @@ app.post('/addDevice', (req, res) => {
     })
 });
 
-// Función que elimina un device de la base de datos
-//--------------------------------------------------
+//=============================================================================
+// Función que elimina un dispositivo de la base de datos
+//=============================================================================
 app.post('/deleteDevice', (req, res) => {
     // Agregar el dispositivo de la base de datos
     let querystr = "DELETE FROM Devices WHERE Devices.id ="+req.body.id;
@@ -116,21 +142,6 @@ app.post('/deleteDevice', (req, res) => {
                 // Si no hay error devuelvo el nombre del dispositivo actualizado
                 res.status(200).send(JSON.stringify(respuesta));
             }
-    })
-});
-
-
-// Pedido de información de los dispositivos a la base de datos
-//-------------------------------------------------------------
-app.get('/devices/', function(req, res, next) {
-    utils.query("SELECT * FROM Devices",(error,db_resp,fields)=>{
-        //console.log(db_resp);
-        if(error){
-            res.status(409).send(error.sqlMessage);    
-        }else{
-            res.status(200).send(JSON.stringify(db_resp));
-        }
-        
     })
 });
 

@@ -3,86 +3,47 @@ class Main implements EventListenerObject {
     private users: Array<Usuario> = new Array();
 
     constructor() {
-        this.users.push(new Usuario('mramos', '123132'));
-        
+        // Configuración del listener para el botón "Agregar dispositivo"
         let btnAgregar = this.recuperarElemento("btnAgregar");
-        btnAgregar.addEventListener('click', this);
-        let btnLogin = this.recuperarElemento("btnLogin");
-        btnLogin.addEventListener('click', this);
-
-        // Corro la búsqueda de devices con el constructor
-        // (No tengo un botón para buscarlos)
+        btnAgregar.addEventListener('click', (event) => this.agregarDispositivo());
+        
+        // Corro la búsqueda de devices directamente en el constructor (No tengo un botón para buscarlos)
         this.buscarDevices();
     }
     handleEvent(object: Event): void {
-        let idDelElemento = (<HTMLElement>object.target).id;
-        if (idDelElemento == 'btn') {
-            let divLogin = this.recuperarElemento("divLogin");
-            divLogin.hidden = false;
-        } else if (idDelElemento === 'btnBuscar') {
-            console.log("Buscando!")
-            this.buscarDevices();
-        } else if (idDelElemento === 'btnLogin') {
-            console.log("login")
-            let iUser = this.recuperarElemento("userName");
-            let iPass = this.recuperarElemento("userPass");
-            let usuarioNombre: string = iUser.value;
-            let usuarioPassword: string = iPass.value;
-            
-            if (usuarioNombre.length >= 4 && usuarioPassword.length >= 6) {
-                console.log("Voy al servidor... ejecuto consulta")
-                let usuario: Usuario = new Usuario(usuarioNombre, usuarioPassword);
-                let checkbox = this.recuperarElemento("cbRecor");
-                
-                console.log(usuario, checkbox.checked);
-                iUser.disabled = true;
-                (<HTMLInputElement>object.target).disabled = true;
-                let divLogin = this.recuperarElemento("divLogin");
-                divLogin.hidden = true;
-            } else {
-                alert("El usuario o la contraseña son icorrectas");
-            }
-        } else if (idDelElemento == 'btnPost') {
-            let xmlHttp = new XMLHttpRequest();
-            xmlHttp.onreadystatechange = () => {
-                if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-                    console.log("se ejecuto el post", xmlHttp.responseText);
+        // Este handle event quedó solo para los cambios de estado de los dispositivos.
+        // Los demás botones tienen eventos onclick directamente ligados a funciones
+        //-----------------------------------------------------------------------------
+        let input = <HTMLInputElement>object.target;
+
+        let strState = { id: input.getAttribute("idBd"), status: input.checked }
+        let xmlHttpPost = new XMLHttpRequest();
+        
+        // Comportamiento frente a la respuesta del POST
+        xmlHttpPost.onreadystatechange = () => {
+            if (xmlHttpPost.readyState === 4) {
+                // Si me llegó un codigo OK del server
+                if (xmlHttpPost.status === 200) {                
+                    // Si no hubo error muestro un alert indicando el dispositivo que se modificó
+                    let json = JSON.parse(xmlHttpPost.responseText);
+                    alert('Cambio estado dispositivo: ' + json.name);
+                } else {
+                    // Si hay error muestro un alert informándolo
+                    alert("ERROR en la consulta");
                 }
             }
-           
-            xmlHttp.open("POST", "http://localhost:8000/usuario", true);
-            
-            xmlHttp.setRequestHeader("Content-Type", "application/json");
-            xmlHttp.setRequestHeader("otracosa", "algo");
-            
-
-            let json = { id: 2, name: 'mramos' };
-            xmlHttp.send(JSON.stringify(json));
-
-        } else if (idDelElemento == 'btnAgregar') {
-
-            this.agregarDispositivo();
-
-        } else {
-            let input = <HTMLInputElement>object.target;
-            // alert(idDelElemento.substring(3) + ' - ' + input.checked);
-            let prenderJson = { id: input.getAttribute("idBd"), status: input.checked }
-            let xmlHttpPost = new XMLHttpRequest();
-            
-            xmlHttpPost.onreadystatechange = () => {
-                if (xmlHttpPost.readyState === 4 && xmlHttpPost.status === 200) {
-                    let json = JSON.parse(xmlHttpPost.responseText);
-                    alert(json.id);
-                }                
-            }
-
-            xmlHttpPost.open("POST", "http://localhost:8000/device", true);
-            xmlHttpPost.setRequestHeader("Content-Type","application/json")
-            xmlHttpPost.send(JSON.stringify(prenderJson));
         }
-        
-    }
 
+        xmlHttpPost.open("POST", "http://localhost:8000/stateDevice", true);
+        xmlHttpPost.setRequestHeader("Content-Type","application/json")
+        xmlHttpPost.send(JSON.stringify(strState));
+        }
+
+
+    // Función para pedir a la base de datos todos los dispositivos declarados y
+    // para mostrarlos en la página principal. También se configura la acción de
+    // los botones (editar/eliminar/estado) creados.
+    //--------------------------------------------------------------------------
     private buscarDevices(): void {
         let xmlHttp = new XMLHttpRequest();
 
@@ -181,25 +142,31 @@ class Main implements EventListenerObject {
         }
 
         xmlHttp.open("GET", "http://localhost:8000/devices", true);
-
         xmlHttp.send();
 
     }
 
     private editarDispositivo(item) {
-
-        // Permite modificar nombre y descripción del dispositivo
-        // (no tipo ni estado, el estado se puede cambiar desde el panel principal
-        // y para el cambiar el tipo se debería crear un dispositivo nuevo)
-        //-----------------------------------------------------------------
+    //=======================================================================================
+    // Funcion que permite editar un dispositivo (nombre,descripción y tipo)
+    //=======================================================================================
 
         // Configuración del modal (HTML)
         let modalContent = `
         <div id="editModal" class="modal" style="width: 600px;">
           <div class="modal-content">
             <h4>Editar Dispositivo</h4>
+            <!-- Menú desplegable para el tipo de dispositivo -->
             <label for="editType">Tipo:</label>
-            <input type="text" id="editType" value="${item.type}">
+            <input list="DeviceType" id="editTypeInput" name="DeviceList">
+            <datalist id="DeviceType">
+                <option value="Luz">
+                <option value="Ventana">
+                <option value="Aire acondicionado">
+                <option value="Televisor">
+                <option value="Ventilador">
+                <option value="Equipo de música">
+            </datalist>
             <label for="editName">Nombre:</label>
             <input type="text" id="editName" value="${item.name}">
             <label for="editDescription">Descripción:</label>
@@ -228,22 +195,46 @@ class Main implements EventListenerObject {
     }
 
     private actualizarDispositivo(item) {
-
-        // Realiza el POST upara actualizar el dispositivo una vez editados sus parámetros
-        //--------------------------------------------------------------------------------
+    //=======================================================================================
+    // Función que realiza el POST para modificar los parámetros del dispositivo
+    //=======================================================================================
 
         // Enviar los cambios al backend
         let xmlHttpPost = new XMLHttpRequest();
         
+        // Recupero variables de nombre y descripción
         let newName = this.recuperarElemento("editName").value;
         let newDescription = this.recuperarElemento("editDescription").value;
-        let newType = this.recuperarElemento("editType").value;
+        
+        // Mapeo de opciones a códigos numéricos
+        const deviceTypeMapping = {
+            "Luz": 0,
+            "Ventana": 1,
+            "Aire acondicionado": 2,
+            "Televisor": 3,
+            "Ventilador": 4,
+            "Equipo de música": 5
+        };
 
+        // Recupero variable de tipo (texto)
+        let selectedType = this.recuperarElemento("editTypeInput").value;
+            
+        // Mapeo a código numérico según opción seleccionada
+        let newType = deviceTypeMapping[selectedType];
+
+        // Comportamiento frente al ingreso de un tipo de dispositivo no válido
+        if (newType == undefined) {
+            // Si no se cambia el tipo de dispositivo se toma el que tenía
+            newType = item.type;
+        }
+
+        // Armo el JSON a pasarle al POST
         let updatedDevice = {id: item.id,
                             name: newName,
                             description: newDescription,
                             type: newType}
 
+        // Comportamiento frente a la respuesta del POST
         xmlHttpPost.onreadystatechange = () => {
         
             if (xmlHttpPost.readyState === 4) {
@@ -270,10 +261,11 @@ class Main implements EventListenerObject {
         location.reload();
     }
 
+    
     private agregarDispositivo() {
-
-        // Arma el modal para cargar los parámetros de un nuevo dispositivo a agregar
-        //---------------------------------------------------------------------------
+    //=======================================================================================
+    // Función que arma el modal para cargar los parámetros de un nuevo dispositivo a agregar
+    //=======================================================================================
 
         // Configuración de la ventana emergente (HTML)
         let modalContent = `
@@ -319,16 +311,16 @@ class Main implements EventListenerObject {
     }
 
     private cargarDispositivo() {
-
-        // Realiza el POST upara agregar el dispositivo una vez editados sus parámetros
-        //-----------------------------------------------------------------------------
+    //=======================================================================================
+    // Función que realiza el POST upara agregar el dispositivo
+    //=======================================================================================
 
         // Enviar los cambios al backend
         let xmlHttpPost = new XMLHttpRequest();
         
+        // Recupero variables de nombre y descripción
         let newName = this.recuperarElemento("editName").value;
         let newDescription = this.recuperarElemento("editDescription").value;
-        //let newType: string = "0"
 
          // Mapeo de opciones a códigos numéricos
          const deviceTypeMapping = {
@@ -340,21 +332,26 @@ class Main implements EventListenerObject {
             "Equipo de música": 5
         };
 
+        // Recupero variables de tipo (texto)
         let selectedType = this.recuperarElemento("editTypeInput").value;
             
-        // Obtener el código numérico correspondiente a la opción seleccionada
+        // Mapeo a código numérico según la opción seleccionada
         let newType = deviceTypeMapping[selectedType];
 
+        // Comportamiento frente al ingreso de un tipo de dispositivo no válido
         if (newType !== undefined) {
-            // Por defecto cuando creo dispositivos los inicializo con estado 0
-            // Lo dejo del lado usuario por si esta característica se deja
-            // elegir en el futuro
+            // Por defecto cuando creo dispositivos los inicializo con estado 0 (apagado)
+            // Lo dejo del lado usuario (frontend) por si esta característica se deja elegir
+            // en el futuro.
             //-----------------------------------------------------------------
+
+            // Armo el JSON a pasarle al POST
             let updatedDevice = {name: newName,
                                 description: newDescription,
                                 type: newType,
                                 state: 0}
 
+            // Comportamiento frente a la respuesta del POST
             xmlHttpPost.onreadystatechange = () => {
 
                 if (xmlHttpPost.readyState === 4) {
@@ -388,6 +385,9 @@ class Main implements EventListenerObject {
     }
 
     private quitarDispositivo(item) {
+    //=======================================================================================
+    // Función que realiza el POST para eliminar un dispositivo
+    //=======================================================================================
 
         let xmlHttpPost = new XMLHttpRequest();
 
@@ -418,6 +418,9 @@ class Main implements EventListenerObject {
 
     }
 
+    //=======================================================================================
+    // Función que recupera un elemento del HTML en función de un "id"
+    //=======================================================================================
     private recuperarElemento(id: string):HTMLInputElement {
         return <HTMLInputElement>document.getElementById(id);
     }
