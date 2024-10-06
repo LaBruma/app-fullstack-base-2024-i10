@@ -97,10 +97,44 @@ class Main implements EventListenerObject {
                     // Lista que me viene del servidor (en formato JSON, por eso la tengo que parsear)
                     let lista: Array<Device> = JSON.parse(xmlHttp.responseText);
                     // Recorro la lista de devices
+                    let img_src = "./static/images/lightbulb.png";
+
                     for (let item of lista) {
+                        // Elijo el icono según el tipo de dispositivo
+                        switch(item.type) { 
+                            case 0: { 
+                                img_src = "./static/images/lightbulb.png";
+                                break; 
+                            } 
+                            case 1: { 
+                                img_src = "./static/images/window.png";
+                                break; 
+                            }
+                            case 2: { 
+                                img_src = "./static/images/ac.png";
+                                break; 
+                            }
+                            case 3: { 
+                                img_src = "./static/images/tv.png";
+                                break; 
+                            }
+                            case 4: { 
+                                img_src = "./static/images/fan.png";
+                                break; 
+                            }
+                            case 5: { 
+                                img_src = "./static/images/music.png";
+                                break; 
+                            }
+                            default: { 
+                                img_src = "./static/images/unknown.png";
+                                break; 
+                            } 
+                        }
+
                         listaDevices += `
                         <li class="collection-item avatar">
-                        <img src="./static/images/lightbulb.png" alt="" class="circle">
+                        <img src="${img_src}" alt="" class="circle">
                         <span class="title">${item.name}</span>
                         <p>${item.description} 
                         </p>
@@ -251,10 +285,10 @@ class Main implements EventListenerObject {
             <input list="DeviceType" id="editTypeInput" name="DeviceList">
             <datalist id="DeviceType">
                 <option value="Luz">
-                <option value="Ventilador">
+                <option value="Ventana">
                 <option value="Aire acondicionado">
                 <option value="Televisor">
-                <option value="Ventana">
+                <option value="Ventilador">
                 <option value="Equipo de música">
             </datalist>
             <label for="editName">Nombre:</label>
@@ -299,10 +333,10 @@ class Main implements EventListenerObject {
          // Mapeo de opciones a códigos numéricos
          const deviceTypeMapping = {
             "Luz": 0,
-            "Ventilador": 1,
+            "Ventana": 1,
             "Aire acondicionado": 2,
             "Televisor": 3,
-            "Ventana": 4,
+            "Ventilador": 4,
             "Equipo de música": 5
         };
 
@@ -312,40 +346,6 @@ class Main implements EventListenerObject {
         let newType = deviceTypeMapping[selectedType];
 
         if (newType !== undefined) {
-
-            /*switch(selectedCode) { 
-                case "Luz": { 
-                //statements;
-                newType = "0";
-                break; 
-                } 
-                case "Aire acondicionado": { 
-                    //statements;
-                    newType = "1";
-                    break; 
-                }
-                case "Televisor": { 
-                    //statements;
-                    newType = "2";
-                    break; 
-                }
-                case "Ventana": { 
-                    //statements;
-                    newType = "3";
-                    break; 
-                }
-                case "Equipo de música": { 
-                    //statements;
-                    newType = "4";
-                    break; 
-                }
-                default: { 
-                //statements; 
-                alert("Tipo de dispositivo no reconocido")
-                break; 
-                } 
-            } */
-
             // Por defecto cuando creo dispositivos los inicializo con estado 0
             // Lo dejo del lado usuario por si esta característica se deja
             // elegir en el futuro
@@ -410,7 +410,7 @@ class Main implements EventListenerObject {
         xmlHttpPost.open("POST", "http://localhost:8000/deleteDevice", true);
         xmlHttpPost.setRequestHeader("Content-Type", "application/json");
 
-        let byeDevice = {id: item.id, name: item.name}
+        let byeDevice = {id: item.id, name: item}
         xmlHttpPost.send(JSON.stringify(byeDevice));
 
         // Recargo la página para que tome efecto el cambio
