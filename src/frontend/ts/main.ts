@@ -1,6 +1,4 @@
 class Main implements EventListenerObject {
-    private nombre: string = "matias";
-    private users: Array<Usuario> = new Array();
 
     constructor() {
         // Configuración del listener para el botón "Agregar dispositivo"
@@ -15,8 +13,17 @@ class Main implements EventListenerObject {
         // Los demás botones tienen eventos onclick directamente ligados a funciones
         //-----------------------------------------------------------------------------
         let input = <HTMLInputElement>object.target;
+        let strState = {}
 
-        let strState = { id: input.getAttribute("idBd"), status: input.checked }
+        console.log(input);
+
+        if (input.type === "checkbox"){
+            strState = { id: input.getAttribute("idBd"), status: input.checked }
+        } else if (input.type === "range") {
+            console.log(input);
+            strState = { id: input.getAttribute("idBd"), status: input.value }
+        }
+
         let xmlHttpPost = new XMLHttpRequest();
         
         // Comportamiento frente a la respuesta del POST
@@ -24,9 +31,7 @@ class Main implements EventListenerObject {
             if (xmlHttpPost.readyState === 4) {
                 // Si me llegó un codigo OK del server
                 if (xmlHttpPost.status === 200) {                
-                    // Si no hubo error muestro un alert indicando el dispositivo que se modificó
-                    let json = JSON.parse(xmlHttpPost.responseText);
-                    alert('Cambio estado dispositivo: ' + json.name);
+                    // Si no hubo error, nada
                 } else {
                     // Si hay error muestro un alert informándolo
                     alert("ERROR en la consulta");
@@ -38,7 +43,6 @@ class Main implements EventListenerObject {
         xmlHttpPost.setRequestHeader("Content-Type","application/json")
         xmlHttpPost.send(JSON.stringify(strState));
         }
-
 
     // Función para pedir a la base de datos todos los dispositivos declarados y
     // para mostrarlos en la página principal. También se configura la acción de
@@ -59,40 +63,48 @@ class Main implements EventListenerObject {
                     let lista: Array<Device> = JSON.parse(xmlHttp.responseText);
                     // Recorro la lista de devices
                     let img_src = "./static/images/lightbulb.png";
+                    //
+                    let ctrl_type = "switch"
 
                     for (let item of lista) {
                         // Elijo el icono según el tipo de dispositivo
                         switch(item.type) { 
                             case 0: { 
                                 img_src = "./static/images/lightbulb.png";
+                                ctrl_type = "switch"
                                 break; 
                             } 
                             case 1: { 
                                 img_src = "./static/images/window.png";
+                                ctrl_type = "slide"
                                 break; 
                             }
                             case 2: { 
                                 img_src = "./static/images/ac.png";
+                                ctrl_type = "slide"
                                 break; 
                             }
                             case 3: { 
                                 img_src = "./static/images/tv.png";
+                                ctrl_type = "switch"
                                 break; 
                             }
                             case 4: { 
                                 img_src = "./static/images/fan.png";
+                                ctrl_type = "slide"
                                 break; 
                             }
                             case 5: { 
                                 img_src = "./static/images/music.png";
+                                ctrl_type = "switch"
                                 break; 
                             }
                             default: { 
                                 img_src = "./static/images/unknown.png";
+                                ctrl_type = "switch"
                                 break; 
                             } 
                         }
-
                         listaDevices += `
                         <li class="collection-item avatar">
                         <img src="${img_src}" alt="" class="circle">
@@ -101,24 +113,35 @@ class Main implements EventListenerObject {
                         </p>
                         <button id="edt_${item.id}" class="edit-button">Editar</button>
                         <button id="del_${item.id}" class="edit-button">Eliminar</button>
-                        <a href="#!" class="secondary-content">
-                          <div class="switch">
-                              <label>
-                                Off`;
-                        if (item.state) {
-                            listaDevices +=`<input idBd="${item.id}" id="cb_${item.id}" type="checkbox" checked>`
-                        } else {
-                            listaDevices +=`<input idBd="${item.id}"  name="chk" id="cb_${item.id}" type="checkbox">`
+                        <a href="#!" class="secondary-content">`
+                        if (ctrl_type === "switch") {
+                            listaDevices +=`
+                            <div class="switch">
+                                <label>
+                                    Off`;
+                                    if (item.state) {
+                                        listaDevices +=`<input idBd="${item.id}" id="cb_${item.id}" type="checkbox" checked>`
+                                    } else {
+                                        listaDevices +=`<input idBd="${item.id}" id="cb_${item.id}" type="checkbox">`
+                                    }
+                                    listaDevices +=`      
+                                    <span class="lever"></span>
+                                    On
+                                </label>
+                            </div>`
+                        } else if (ctrl_type === "slide") {
+                            listaDevices +=`
+                            <div class="slidecontainer">
+                                <input idBd="${item.id}" id="slide_${item.id}" type="range" min="1" max="10" value="${item.state}">
+                            </div>`
                         }
-                        listaDevices += `      
-                                <span class="lever"></span>
-                                On
-                              </label>
-                            </div>
-                      </a>
-                      </li>`
-                     
+                        listaDevices +=`
+                        </a>
+                        </li>`
                     }
+
+                    // <input idSl="${item.id}" id="sl_${item.id}" type="range" min="0" max="100"/>
+
                     // Paso el texto plano generado al HTML para que se muestre
                     ul.innerHTML = listaDevices;
                     
@@ -126,7 +149,16 @@ class Main implements EventListenerObject {
                     for (let item of lista) {
                         // Recupero referencias a checkbox
                         let cb = this.recuperarElemento("cb_" + item.id);
-                        cb.addEventListener("click", this);
+                        if (cb) {
+                            // Si verifica que cb_item.id existe para este item:
+                            cb.addEventListener("click", this);
+                        }
+                        // Recupero referencias a slides
+                        let slide = this.recuperarElemento("slide_" + item.id);
+                        if (slide) {
+                            // Si verifica que slider_item.id existe para este item:
+                            slide.addEventListener("click", this);
+                        }
                         // Recupero referencia a botones de edición
                         let edt = this.recuperarElemento("edt_" + item.id);
                         edt.addEventListener("click", (event) => this.editarDispositivo(item));
@@ -410,7 +442,7 @@ class Main implements EventListenerObject {
         xmlHttpPost.open("POST", "http://localhost:8000/deleteDevice", true);
         xmlHttpPost.setRequestHeader("Content-Type", "application/json");
 
-        let byeDevice = {id: item.id, name: item}
+        let byeDevice = {id: item.id, name: item.name}
         xmlHttpPost.send(JSON.stringify(byeDevice));
 
         // Recargo la página para que tome efecto el cambio

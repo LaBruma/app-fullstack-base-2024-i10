@@ -13,7 +13,6 @@ app.use(express.static('/home/node/app/static/'));
 
 //=======[ Main module code ]==================================================
 
-
 //=============================================================================
 // Función que trae datos de un dispositivo en particular
 // NOTA: Dejo esta función porque podría ser útil aunque no se invoque
@@ -48,35 +47,15 @@ app.get('/devices/', function(req, res, next) {
     })
 });
 
-/*
-app.get('/usuario',function(req,res){
-
-    res.send("[{id:1,name:'mramos'},{id:2,name:'fperez'}]")
-});
-
-//Insert
-app.post('/usuario',function(req,res){
-    console.log(req.body);
-    //if(req.body.id!=undefined && req.body.name!=undefined){
-    if(req.body.name!=undefined){
-        //inset en la tabla
-        res.send();
-    }else{
-        let mensaje = {mensaje:'El id o el name no estaban cargados'}
-        res.status(400).send(JSON.stringify(mensaje));
-    }
-    
-});*/
-
 //=============================================================================
 // Función que cambia el estado del dispositivo frente a una petición
 //=============================================================================
 app.post('/stateDevice/',function(req,res){
     
+    console.log(req.body);
     utils.query("update Devices set state="+req.body.status +" where id="+req.body.id,
         (err,resp,meta)=>{
             if(err){
-                console.log(err.sqlMessage)
                 res.status(409).send(err.sqlMessage);
             }else{
                 res.status(200).send("ok "+resp);
