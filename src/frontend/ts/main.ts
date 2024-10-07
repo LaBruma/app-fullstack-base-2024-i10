@@ -15,12 +15,10 @@ class Main implements EventListenerObject {
         let input = <HTMLInputElement>object.target;
         let strState = {}
 
-        console.log(input);
-
+        // En función si el callback vino de un checkbox o un range paso el estado al POST
         if (input.type === "checkbox"){
-            strState = { id: input.getAttribute("idBd"), status: input.checked }
+            strState = { id: input.getAttribute("idBd"), status: input.checked}
         } else if (input.type === "range") {
-            console.log(input);
             strState = { id: input.getAttribute("idBd"), status: input.value }
         }
 
@@ -130,9 +128,14 @@ class Main implements EventListenerObject {
                                 </label>
                             </div>`
                         } else if (ctrl_type === "slide") {
+                            // Declaro el input "range" según indica Materialize
                             listaDevices +=`
-                            <div class="slidecontainer">
-                                <input idBd="${item.id}" id="slide_${item.id}" type="range" min="1" max="10" value="${item.state}">
+                            <div id="test-slider">
+                                <form action="#">
+                                    <p class="range-field">
+                                        <input idBd="${item.id}" id="slide_${item.id}" type="range" min="0" max="1" step="0.1" value="${item.state}">
+                                    </p>
+                                </form>
                             </div>`
                         }
                         listaDevices +=`
@@ -140,7 +143,9 @@ class Main implements EventListenerObject {
                         </li>`
                     }
 
-                    // <input idSl="${item.id}" id="sl_${item.id}" type="range" min="0" max="100"/>
+                    /*<div class="slidecontainer">
+                        <input idBd="${item.id}" id="slide_${item.id}" type="range" min="1" max="10" value="${item.state}">
+                    </div>`*/
 
                     // Paso el texto plano generado al HTML para que se muestre
                     ul.innerHTML = listaDevices;

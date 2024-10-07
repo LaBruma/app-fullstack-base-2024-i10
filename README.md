@@ -7,7 +7,7 @@ Web App Full Stack Base
 
 *Ayudaría mucho si apoyaras este proyecto con una ⭐ en Github!*
 
-Este proyecto es una aplicación web fullstack que se ejecuta sobre el ecosistema `Docker`. Está compuesta por un compilador de `TypeScript` que te permite utilizar este superset de JavaScript para poder programar un `cliente web`. También tiene un servicio en `NodeJS` que te permite ejecutar código en backend y al mismo tiempo disponibilizar el código del cliente web para interactar con el servicio. Además tiene una `base de datos` MySQL que puede interactuar con el backend para guardar y consultar datos, y de manera adicional trae un `administrador` de base de datos para poder administrar la base en caso que lo necesites.
+Este proyecto es una aplicación web fullstack que se ejecuta sobre el ecosistema `Docker`. Está compuesta por un compilador de `TypeScript` que te permite utilizar este superset de JavaScript para poder programar un `cliente web`. También tiene un servicio en `NodeJS` que te permite ejecutar código en backend y al mismo tiempo disponibilizar el código del cliente web para interactuar con el servicio. Además tiene una `base de datos` MySQL que puede interactuar con el backend para guardar y consultar datos, y de manera adicional trae un `administrador` de base de datos para poder administrar la base en caso que lo necesites.
 
 La aplicación IoT de base que viene con este proyecto se encarga de crear una tabla llamada `Devices` en la base de datos, y la idea es que vos puedas desarrollar el código de backend y frontend que te permita controlar desde el navegador el estado de los devices de un hogar inteligente - *como pueden ser luces, TVs, ventiladores, persianas, enchufes y otros* - y almacenar los estados de cada uno en la base de datos. 
 
@@ -35,7 +35,7 @@ Continua con la descarga del código cuando tengas las dependencias instaladas y
 
 ### Descargar el código
 
-Para descargar el código, lo más conveniente es que realices un `fork` de este proyecto a tu cuenta personal haciendo click en [este link](https://github.com/gotoiot/app-fullstack-base/fork). Una vez que ya tengas el fork a tu cuenta, descargalo con este comando (acordate de poner tu usuario en el link):
+Para descargar el código, lo más conveniente es que realices un `fork` de este proyecto a tu cuenta personal haciendo click en [este link](https://github.com/LaBruma/app-fullstack-base-2024-i10/fork). Una vez que ya tengas el fork a tu cuenta, descargalo con este comando (acordate de poner tu usuario en el link): 
 
 ```
 git clone https://github.com/USER/app-fullstack-base.git
@@ -158,44 +158,115 @@ En esta sección podés ver los detalles específicos de funcionamiento del cód
 
 ### Agregar un dispositivo
 
-Completá los pasos para agregar un dispositivo desde el cliente web.
+Por sobre el listado de dispositivos encontrarás el botón **+ AGREGAR DISPOSITIVOS**. Al pulsarlo podrás indicar el Tipo (de un listado de tipos posibles), el nombre y la descripción del dispositivo que quieras agregar. Tené en cuenta que el valor de inicialización de todos los dispositivos es apagado.
 
 ### Frontend
 
-Completá todos los detalles sobre cómo armaste el frontend, sus interacciones, etc.
+Ya sean dispositivos creados o existentes (traídos de la base de datos), los verás uno seguido de otro en un listado en la single page web.
+
+Cada dispositivo tiene un ícono asociado al tipo de dispositivo, a su vez tendrá un control tipo **ON/OFF** o de tipo **RANGO** si correspondiese un control gradual (este rango varía entre 0 y 1 con un paso de 0.1).
+
+A su vez se cuenta con un botón de *Editar* por dispositivo mediante el cual se puede editar el tipo, nombre y descripción (si no se modifica el tipo se mantiene el que presenta) y también con un botón "Eliminar" para eliminarlo.
 
 ### Backend
 
-Completá todos los detalles de funcionamiento sobre el backend, sus interacciones con el cliente web, la base de datos, etc.
+El **Backend** es responsivo a las indicaciones del **Frontend** realizando principalmente la interacción con la base de datos para editar, agregar y eliminar dispositivos.
+
+Devuelve un codigo 200 si la interacción con la base de datos fue exitosa y un código 40x si hubo algún error (esta última condición es captada por el frontend que informa al usuario de dicha condición)
+
+Se modificó a su vez la base de datos, particularmente en el campo **state** para que aceptara números reales. De esta manera un dispositivo apagado guardará el valor **0.0**, uno encendido el valor **1.0**, y uno que permita valores intermedios, por ejemplo una luz dimerizable, podrá presentar un valor de **0.5** si está a la mitad de su intensidad.
 
 <details><summary><b>Ver los endpoints disponibles</b></summary><br>
 
 Completá todos los endpoints del backend con los metodos disponibles, los headers y body que recibe, lo que devuelve, ejemplos, etc.
 
-1) Devolver el estado de los dispositivos.
+1) Devolver datos de todos los dispositivos:
 
 ```json
 {
-    "method": "get",
-    "request_headers": "application/json",
+    "method": "post",
+    "request_headers": "application/devices",
     "request_body": "",
     "response_code": 200,
-    "request_body": {
-        "devices": [
+    "response_body": [
+        "RowDataPacket":
             {
                 "id": 1,
-                "status": true,
-                "description": "Kitchen light"
+                "name": "Lampara 1",
+                "description": "Luz living 3",
+                "state": 0,
+                "type":0
             }
         ]
-    },
 }
 ``` 
 
-</details>
+2) Cambiar estado de un dispositivo:
 
-</details>
+```json
+{
+    "method": "post",
+    "request_headers": "application/stateDevice",
+    "request_body": { "id": 1,
+                      "status": false },
+    "response_code": 200,
+    "response_body": "ok" +
+        "OKPacket" : {
+            "fieldCount": 0,
+            "affectedRows": 1,
+            "insertId": 0,
+            "serverStatus": 2,
+            "warningCount": 0,
+            "message": "(Rows matched: 1  Changed: 1  Warnings: 0",
+            "protocol41": true,
+            "changedRows": 1
+        }
+}
+``` 
 
+3) Actualizar el estado de un dispositivo:
+
+```json
+{
+    "method": "post",
+    "request_headers": "application/updateDevice",
+    "request_body":  { "id": 1,
+                       "name": "Lampara 1",
+                       "description": "Luz living 3",
+                       "type": 0 },
+    "response_code": 200,
+    "response_body": { "name": "Lampara 1"}
+}
+``` 
+
+4) Agregar un dispositivo:
+
+```json
+{
+    "method": "post",
+    "request_headers": "application/addDevice",
+    "request_body": { "id": 9,
+                      "name": "Televisor 1",
+                      "description": "Living",
+                      "type": 3,
+                      "state": 0}
+    "response_code": 200,
+    "response_body": { "name": "Televisor 1"}
+}
+``` 
+
+4) Eliminar un dispositivo:
+
+```json
+{
+    "method": "post",
+    "request_headers": "application/addDevice",
+    "request_body": { "id": 9,
+                      "name": "Televisor 1" }
+    "response_code": 200,
+    "response_body": { "name": "Televisor 1"}
+}
+``` 
 
 ## Tecnologías utilizadas 🛠️
 
@@ -243,6 +314,8 @@ Las colaboraciones principales fueron realizadas por:
 * **[Agustin Bassi](https://github.com/agustinBassi)**: Ideación, puesta en marcha y mantenimiento del proyecto.
 * **[Ernesto Giggliotti](https://github.com/ernesto-g)**: Creación inicial del frontend, elección de Material Design.
 * **[Brian Ducca](https://github.com/brianducca)**: Ayuda para conectar el backend a la base de datos, puesta a punto de imagen de Docker.
+
+* **[Andrés F. Brumovsky](https://github.com/LaBruma)**: Modificaciones sobre el proyecto base para brindar funcionalidad.
 
 También podés mirar todas las personas que han participado en la [lista completa de contribuyentes](https://github.com/###/contributors).
 
